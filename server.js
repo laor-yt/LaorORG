@@ -12,7 +12,8 @@ function syncToGitHub(filename, dataObj) {
 
     const content = Buffer.from(JSON.stringify(dataObj, null, 2)).toString('base64');
     const repo = 'laor-yt/LaorORG'; // Assumes repository name based on user input
-    const reqPath = 'Dashboard/' + filename;
+    const reqPath = filename; // Path is at the root of the repo, not Dashboard/
+
 
     const getOptions = {
         hostname: 'api.github.com',
@@ -60,14 +61,16 @@ function syncToGitHub(filename, dataObj) {
     }).end();
 }
 
+
 const app = express();
 const PORT = 3000;
 const UDP_PORT = 3041;
 const DATA_FILE = path.join(__dirname, 'installations.json');
 const ALLOWED_FILE = path.join(__dirname, 'allowed_emails.json');
-
+const GLOBAL_STATUS_FILE = path.join(__dirname, 'global_status.json');
 app.use(cors());
 app.use(express.json());
+app.use(express.text({ type: 'text/csv' })); // Support parsing raw CSV text
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Load allowed emails
@@ -131,6 +134,30 @@ function saveInstallations(data) {
         syncToGitHub('installations.json', data);
     } catch (e) {
         console.error('Error saving data:', e);
+    }
+}
+
+// Load global status
+function loadGlobalStatus() {
+    try {
+        if (fs.existsSync(GLOBAL_STATUS_FILE)) {
+            return JSON.parse(fs.readFileSync(GLOBAL_STATUS_FILE, 'utf8'));
+        }
+    } catch (e) {
+        console.error('Error loading global status:', e);
+    }
+    const defaultStatus = { state: 'Running' };
+    saveGlobalStatus(defaultStatus);
+    return defaultStatus;
+}
+
+// Save global status
+function saveGlobalStatus(data) {
+    try {
+        fs.writeFileSync(GLOBAL_STATUS_FILE, JSON.stringify(data, null, 2), 'utf8');
+        syncToGitHub('global_status.json', data);
+    } catch (e) {
+        console.error('Error saving global status:', e);
     }
 }
 
@@ -201,6 +228,10 @@ app.get('/api/check-uninstall', (req, res) => {
 
         if (item.status === 'Pending Uninstall') {
             return res.json({ action: 'uninstall' });
+        }
+        
+        if (item.status === 'Stopped') {
+            return res.json({ action: 'stop' });
         }
     }
     res.json({ action: 'none' });
@@ -306,6 +337,78 @@ app.delete('/api/allowed-emails', (req, res) => {
     res.json({ success: true, allowed });
 });
 
+// Dashboard: Export Allowed Emails to CSV
+app.get('/api/export-allowed-emails-csv', (req, res) => {
+    const allowed = loadAllowedEmails();
+    if (allowed.length === 0) {
+        return res.send('email,startDate,endDate\n');
+    }
+    const header = Object.keys(allowed[0]).join(',') + '\n';
+    const rows = allowed.map(i => Object.values(i).map(v => `"${v}"`).join(',')).join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="allowed_emails.csv"');
+    res.send(header + rows);
+});
+
+// Dashboard: Import CSV (replace target data)
+app.post('/api/import-csv', (req, res) => {
+    const { target } = req.query; // 'installations' or 'allowed_emails'
+    if (!req.body || typeof req.body !== 'string') return res.status(400).json({ error: 'No data' });
+    
+    // Remove BOM if present
+    let bodyText = req.body.trim();
+    if (bodyText.charCodeAt(0) === 0xFEFF) {
+        bodyText = bodyText.slice(1);
+    }
+    
+    const lines = bodyText.split('\n');
+    if (lines.length < 1) return res.status(400).json({ error: 'Empty CSV' });
+    
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const data = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+        if (values.length === headers.length && values.length > 0) {
+            const obj = {};
+            headers.forEach((h, index) => {
+                obj[h] = values[index];
+            });
+            data.push(obj);
+        }
+    }
+    
+    if (target === 'installations') {
+        let existing = loadInstallations();
+        data.forEach(newItem => {
+            if (!newItem.email) return;
+            const idx = existing.findIndex(e => (e.email || '').toLowerCase() === newItem.email.toLowerCase() && (e.pcName || '').toLowerCase() === (newItem.pcName || '').toLowerCase());
+            if (idx !== -1) {
+                existing[idx] = { ...existing[idx], ...newItem };
+            } else {
+                existing.push(newItem);
+            }
+        });
+        saveInstallations(existing);
+    } else if (target === 'allowed_emails') {
+        let existing = loadAllowedEmails();
+        data.forEach(newItem => {
+            if (!newItem.email) return;
+            const idx = existing.findIndex(e => (e.email || '').toLowerCase() === newItem.email.toLowerCase());
+            if (idx !== -1) {
+                existing[idx] = { ...existing[idx], ...newItem };
+            } else {
+                existing.push(newItem);
+            }
+        });
+        saveAllowedEmails(existing);
+    } else {
+        return res.status(400).json({ error: 'Invalid target' });
+    }
+    
+    res.json({ success: true, count: data.length });
+});
+
 // Dashboard: get all installations
 app.get('/api/installations', (req, res) => {
     res.json(loadInstallations());
@@ -322,6 +425,38 @@ app.post('/api/uninstall-trigger', (req, res) => {
         return res.json({ success: true, message: 'Uninstallation command queued' });
     }
     res.status(404).json({ error: 'Installation not found' });
+});
+
+// Dashboard: update client status (start/stop)
+app.post('/api/client-status', (req, res) => {
+    const { email, pcName, action } = req.body;
+    let installations = loadInstallations();
+    const item = installations.find(i => i.email === email && i.pcName === pcName);
+    if (item) {
+        if (action === 'stop') {
+            item.status = 'Stopped';
+        } else if (action === 'start') {
+            item.status = 'Active';
+        }
+        saveInstallations(installations);
+        return res.json({ success: true });
+    }
+    res.status(404).json({ error: 'Installation not found' });
+});
+
+// Dashboard: Get global service state
+app.get('/api/global-status', (req, res) => {
+    res.json(loadGlobalStatus());
+});
+
+// Dashboard: Set global service state
+app.post('/api/global-status', (req, res) => {
+    const { state } = req.body;
+    if (state === 'Running' || state === 'Stopped') {
+        saveGlobalStatus({ state });
+        return res.json({ success: true, state });
+    }
+    res.status(400).json({ error: 'Invalid state' });
 });
 
 // Dashboard: get discovered peers on network

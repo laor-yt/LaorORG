@@ -99,10 +99,11 @@ body {
 }
 
 .logo-icon {
-    font-size: 32px;
-    color: var(--accent-secondary);
-    text-shadow: 0 0 15px var(--accent-secondary-glow);
-    animation: spinSkull 6s infinite linear;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    box-shadow: 0 0 15px var(--accent-secondary-glow);
 }
 
 @keyframes spinSkull {

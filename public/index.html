@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
     <title>LaorORG Web Management Console</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
     <div class="glass-bg"></div>
@@ -18,7 +19,7 @@
         <!-- Header -->
         <header class="main-header">
             <div class="logo-area">
-                <div class="logo-icon">☠</div>
+                <div class="logo-icon"><img src="/favicon.ico?v=2" alt="Logo" style="width: 48px; height: 48px; object-fit: contain; border-radius: 8px;"></div>
                 <div class="logo-text">
                     <h1>LaorORG</h1>
                     <span>Enterprise Patch Controller</span>
@@ -54,10 +55,10 @@
                             <thead>
                                 <tr>
                                     <th>Client PC</th>
-                                    <th>Registered Email</th>
+                                    <th id="th-email" class="sortable-col" style="cursor: pointer; user-select: none;">Registered Email <span class="sort-icon" style="opacity: 0.5; font-size: 0.8em;">↕</span></th>
                                     <th>IP Address</th>
                                     <th>Last Seen</th>
-                                    <th>Status</th>
+                                    <th id="th-status" class="sortable-col" style="cursor: pointer; user-select: none;">Status <span class="sort-icon" style="opacity: 0.5; font-size: 0.8em;">↕</span></th>
                                     <th class="actions-col">Actions</th>
                                 </tr>
                             </thead>
@@ -83,6 +84,18 @@
                     <div id="peersList" class="peers-list-container">
                         <!-- Dynamic Content -->
                         <div class="empty-peers">No other peers discovered on the subnet yet.</div>
+                    </div>
+                </div>
+
+                <div class="card glass-card whitelist-card">
+                    <h2>Global Service Control</h2>
+                    <p class="subtitle">Start or stop the patch controller service for all clients:</p>
+                    <div style="display: flex; gap: 15px; margin-top: 20px; justify-content: center;">
+                        <button id="btnGlobalStart" class="add-email-btn" style="flex: 1; background: var(--success); border-color: var(--success);">Start All</button>
+                        <button id="btnGlobalStop" class="add-email-btn" style="flex: 1; background: var(--danger); border-color: var(--danger);">Stop All</button>
+                    </div>
+                    <div style="margin-top: 15px; text-align: center; font-size: 14px;">
+                        Current State: <strong id="globalStateDisplay">Loading...</strong>
                     </div>
                 </div>
 
@@ -118,6 +131,15 @@
                             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                             Export State DB
                         </a>
+                        <button id="btnExportCSV" class="action-btn secondary-btn">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+                            Export Whitelist (CSV)
+                        </button>
+                        <button id="btnImportCSV" class="action-btn secondary-btn">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+                            Import Whitelist (CSV)
+                        </button>
+                        <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
                     </div>
                 </div>
             </section>
@@ -127,6 +149,6 @@
     <!-- Notification Toast -->
     <div id="toast" class="toast"></div>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=2"></script>
 </body>
 </html>
