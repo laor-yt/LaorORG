@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaorORG Web Management Console</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="glow-orb glow-orb-1"></div>
+    <div class="glow-orb glow-orb-2"></div>
+    
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="logo-area">
+                <div class="logo-icon">☠</div>
+                <div class="logo-text">
+                    <h1>LaorORG</h1>
+                    <span>Enterprise Patch Controller</span>
+                </div>
+            </div>
+            <div class="system-stats">
+                <div class="stat-pill">
+                    <span class="stat-label">Active Clients:</span>
+                    <span id="activeCount" class="stat-val">0</span>
+                </div>
+                <div class="stat-pill">
+                    <span class="stat-label">Peer Servers:</span>
+                    <span id="peerCount" class="stat-val">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="dashboard-grid">
+            <!-- Left Panel: Active Installations -->
+            <section class="grid-section clients-section">
+                <div class="section-header">
+                    <h2>Registered Installations</h2>
+                    <button id="btnRefresh" class="action-btn-icon">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                        Refresh List
+                    </button>
+                </div>
+                
+                <div class="card glass-card">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Client PC</th>
+                                    <th>Registered Email</th>
+                                    <th>IP Address</th>
+                                    <th>Last Seen</th>
+                                    <th>Status</th>
+                                    <th class="actions-col">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clientsTableBody">
+                                <!-- Dynamic Content -->
+                                <tr>
+                                    <td colspan="6" class="loading-state">Scanning for clients...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Network Discovery & Peers -->
+            <section class="grid-section network-section">
+                <div class="section-header">
+                    <h2>Network Peers (SSDP/UDP)</h2>
+                </div>
+                
+                <div class="card glass-card peers-card">
+                    <p class="subtitle">Discovered PCs running the patch service dashboard on your local network:</p>
+                    <div id="peersList" class="peers-list-container">
+                        <!-- Dynamic Content -->
+                        <div class="empty-peers">No other peers discovered on the subnet yet.</div>
+                    </div>
+                </div>
+
+                <div class="card glass-card whitelist-card">
+                    <h2>Authorization Whitelist</h2>
+                    <p class="subtitle">Only emails in this list are allowed to install the patch controller:</p>
+                    
+                    <form id="whitelistForm" class="whitelist-form">
+                        <input type="email" id="whitelistEmailInput" placeholder="Enter email..." required class="whitelist-input">
+                        <div class="whitelist-dates">
+                            <div class="date-group">
+                                <label for="whitelistStartDateInput">Start:</label>
+                                <input type="date" id="whitelistStartDateInput" required class="whitelist-date-input">
+                            </div>
+                            <div class="date-group">
+                                <label for="whitelistEndDateInput">End:</label>
+                                <input type="date" id="whitelistEndDateInput" required class="whitelist-date-input">
+                            </div>
+                        </div>
+                        <button type="submit" class="add-email-btn">Add</button>
+                    </form>
+
+                    <div id="whitelistContainer" class="whitelist-container">
+                        <!-- Dynamic list -->
+                        <div class="loading-state">Loading whitelist...</div>
+                    </div>
+                </div>
+
+                <div class="card glass-card quick-actions-card">
+                    <h2>System Actions</h2>
+                    <div class="action-buttons-group">
+                        <a href="/patch_states.ini" download class="action-btn secondary-btn">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                            Export State DB
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
