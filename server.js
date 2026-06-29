@@ -12,7 +12,7 @@ function syncToGitHub(filename, dataObj) {
 
     const content = Buffer.from(JSON.stringify(dataObj, null, 2)).toString('base64');
     const repo = 'laor-yt/LaorORG'; // Assumes repository name based on user input
-    const reqPath = filename;
+    const reqPath = 'Dashboard/' + filename;
 
     const getOptions = {
         hostname: 'api.github.com',
