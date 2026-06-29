@@ -337,45 +337,21 @@ app.delete('/api/allowed-emails', (req, res) => {
     res.json({ success: true, allowed });
 });
 
-// Dashboard: Export Allowed Emails to CSV
-app.get('/api/export-allowed-emails-csv', (req, res) => {
+// Dashboard: Export Allowed Emails to JSON
+app.get('/api/export-allowed-emails-json', (req, res) => {
     const allowed = loadAllowedEmails();
-    if (allowed.length === 0) {
-        return res.send('email,startDate,endDate\n');
-    }
-    const header = Object.keys(allowed[0]).join(',') + '\n';
-    const rows = allowed.map(i => Object.values(i).map(v => `"${v}"`).join(',')).join('\n');
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="allowed_emails.csv"');
-    res.send(header + rows);
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="allowed_emails.json"');
+    res.send(JSON.stringify(allowed, null, 2));
 });
 
-// Dashboard: Import CSV (replace target data)
-app.post('/api/import-csv', (req, res) => {
+// Dashboard: Import JSON (merge with target data)
+app.post('/api/import-json', (req, res) => {
     const { target } = req.query; // 'installations' or 'allowed_emails'
-    if (!req.body || typeof req.body !== 'string') return res.status(400).json({ error: 'No data' });
+    const data = req.body;
     
-    // Remove BOM if present
-    let bodyText = req.body.trim();
-    if (bodyText.charCodeAt(0) === 0xFEFF) {
-        bodyText = bodyText.slice(1);
-    }
-    
-    const lines = bodyText.split('\n');
-    if (lines.length < 1) return res.status(400).json({ error: 'Empty CSV' });
-    
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    const data = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-        if (values.length === headers.length && values.length > 0) {
-            const obj = {};
-            headers.forEach((h, index) => {
-                obj[h] = values[index];
-            });
-            data.push(obj);
-        }
+    if (!Array.isArray(data)) {
+        return res.status(400).json({ error: 'Data must be a JSON array' });
     }
     
     if (target === 'installations') {
@@ -412,6 +388,13 @@ app.post('/api/import-csv', (req, res) => {
 // Dashboard: get all installations
 app.get('/api/installations', (req, res) => {
     res.json(loadInstallations());
+});
+
+app.get('/api/installations-export', (req, res) => {
+    const data = loadInstallations();
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename=installations.json');
+    res.send(JSON.stringify(data, null, 2));
 });
 
 // Dashboard: trigger uninstallation for a PC

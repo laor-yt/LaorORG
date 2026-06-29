@@ -615,3 +615,4 @@ body {
     color: var(--danger);
 }
 
+.header-actions { display: flex; gap: 10px; }

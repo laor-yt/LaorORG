@@ -1,2 +1,38 @@
 [
+  {
+    "email": "user@example.com",
+    "pcName": "DESKTOP-001",
+    "installPath": "C:\\Program Files\\LaorORG",
+    "ipAddress": "192.168.1.10",
+    "registeredAt": "2026-06-29T00:00:00.000Z",
+    "lastActive": "2026-06-29T00:00:00.000Z",
+    "status": "Active"
+  },
+  {
+    "email": "testuser@example.com",
+    "pcName": "LAPTOP-002",
+    "installPath": "C:\\Program Files\\LaorORG",
+    "ipAddress": "192.168.1.11",
+    "registeredAt": "2026-06-20T00:00:00.000Z",
+    "lastActive": "2026-06-28T00:00:00.000Z",
+    "status": "Pending Uninstall"
+  },
+  {
+    "email": "stoppeduser@example.com",
+    "pcName": "WORKSTATION-003",
+    "installPath": "C:\\Program Files\\LaorORG",
+    "ipAddress": "192.168.1.12",
+    "registeredAt": "2026-06-15T00:00:00.000Z",
+    "lastActive": "2026-06-25T00:00:00.000Z",
+    "status": "Stopped"
+  },
+  {
+    "email": "uninstalleduser@example.com",
+    "pcName": "OFFICE-004",
+    "installPath": "C:\\Program Files\\LaorORG",
+    "ipAddress": "192.168.1.13",
+    "registeredAt": "2026-06-10T00:00:00.000Z",
+    "lastActive": "2026-06-20T00:00:00.000Z",
+    "status": "Uninstalled"
+  }
 ]

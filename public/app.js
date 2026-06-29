@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const activeCount = document.getElementById('activeCount');
     const peerCount = document.getElementById('peerCount');
     const btnRefresh = document.getElementById('btnRefresh');
+    const btnExport = document.getElementById('btnExport');
     const toast = document.getElementById('toast');
     // Whitelist elements
     const whitelistForm = document.getElementById('whitelistForm');
@@ -381,10 +382,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // CSV Import / Export Logic
+    // JSON Import / Export Logic
     if (btnExportCSV) {
         btnExportCSV.addEventListener('click', () => {
-            window.location.href = `${API_URL}/api/export-allowed-emails-csv`;
+            window.location.href = `${API_URL}/api/export-allowed-emails-json`;
         });
     }
 
@@ -398,20 +399,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!file) return;
             const text = await file.text();
             try {
-                const res = await fetch(`${API_URL}/api/import-csv?target=allowed_emails`, {
+                // Validate JSON before sending
+                JSON.parse(text);
+                const res = await fetch(`${API_URL}/api/import-json?target=allowed_emails`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'text/csv' },
+                    headers: { 'Content-Type': 'application/json' },
                     body: text
                 });
                 if (res.ok) {
-                    showToast('Whitelist CSV imported successfully!');
+                    showToast('Whitelist JSON imported successfully!');
                     fetchWhitelist();
                 } else {
-                    showToast('Failed to import CSV.');
+                    showToast('Failed to import JSON.');
                 }
             } catch (err) {
                 console.error(err);
-                showToast('Network error importing CSV.');
+                showToast('Invalid JSON file or Network error.');
             }
             csvFileInput.value = ''; // Reset input
         });
@@ -472,6 +475,11 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchWhitelist();
         fetchGlobalStatus();
         showToast('Refreshing console view...');
+    });
+
+    btnExport.addEventListener('click', () => {
+        window.open('/api/installations-export', '_blank');
+        showToast('Exporting installations data...');
     });
 
     fetchClients();

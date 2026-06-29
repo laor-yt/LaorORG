@@ -43,10 +43,16 @@
             <section class="grid-section clients-section">
                 <div class="section-header">
                     <h2>Registered Installations</h2>
-                    <button id="btnRefresh" class="action-btn-icon">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                        Refresh List
-                    </button>
+                    <div class="header-actions">
+                        <button id="btnExport" class="action-btn-icon" style="margin-right: 10px;">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                            Export JSON
+                        </button>
+                        <button id="btnRefresh" class="action-btn-icon">
+                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                            Refresh List
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="card glass-card">
@@ -133,13 +139,13 @@
                         </a>
                         <button id="btnExportCSV" class="action-btn secondary-btn">
                             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-                            Export Whitelist (CSV)
+                            Export Whitelist (JSON)
                         </button>
                         <button id="btnImportCSV" class="action-btn secondary-btn">
                             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-                            Import Whitelist (CSV)
+                            Import Whitelist (JSON)
                         </button>
-                        <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                        <input type="file" id="csvFileInput" accept=".json" style="display: none;">
                     </div>
                 </div>
             </section>
