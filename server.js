@@ -4,6 +4,61 @@ const fs = require('fs');
 const path = require('path');
 const dgram = require('dgram');
 const os = require('os');
+const https = require('https');
+
+function syncToGitHub(filename, dataObj) {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) return; // Only sync if token is provided
+
+    const content = Buffer.from(JSON.stringify(dataObj, null, 2)).toString('base64');
+    const repo = 'laor-yt/LaorORG'; // Assumes repository name based on user input
+    const reqPath = filename;
+
+    const getOptions = {
+        hostname: 'api.github.com',
+        path: `/repos/${repo}/contents/${reqPath}`,
+        method: 'GET',
+        headers: {
+            'User-Agent': 'Render-Node-App',
+            'Authorization': `token ${token}`
+        }
+    };
+
+    https.request(getOptions, (res) => {
+        let body = '';
+        res.on('data', d => body += d);
+        res.on('end', () => {
+            let sha = '';
+            if (res.statusCode === 200) {
+                sha = JSON.parse(body).sha;
+            }
+            const putData = JSON.stringify({
+                message: `Auto-sync ${filename} from Render`,
+                content: content,
+                sha: sha || undefined
+            });
+            const putOptions = {
+                hostname: 'api.github.com',
+                path: `/repos/${repo}/contents/${reqPath}`,
+                method: 'PUT',
+                headers: {
+                    'User-Agent': 'Render-Node-App',
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(putData)
+                }
+            };
+            const req = https.request(putOptions, (resPut) => {
+                console.log(`Synced ${filename} to GitHub. Status: ${resPut.statusCode}`);
+            });
+            req.on('error', (e) => console.error(`Error syncing ${filename}:`, e));
+            req.write(putData);
+            req.end();
+        });
+    }).on('error', (e) => {
+        console.error(`Error getting SHA for ${filename}:`, e);
+    }).end();
+}
 
 const app = express();
 const PORT = 3000;
@@ -51,6 +106,7 @@ function loadAllowedEmails() {
 function saveAllowedEmails(data) {
     try {
         fs.writeFileSync(ALLOWED_FILE, JSON.stringify(data, null, 2), 'utf8');
+        syncToGitHub('allowed_emails.json', data);
     } catch (e) {
         console.error('Error saving allowed emails:', e);
     }
@@ -72,6 +128,7 @@ function loadInstallations() {
 function saveInstallations(data) {
     try {
         fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
+        syncToGitHub('installations.json', data);
     } catch (e) {
         console.error('Error saving data:', e);
     }
@@ -292,6 +349,13 @@ function getLocalIPs() {
 // UDP Peer Discovery Setup
 const udpSocket = dgram.createSocket('udp4');
 
+udpSocket.on('error', (err) => {
+    console.error('UDP Discovery Socket error (UDP Discovery disabled):', err.message);
+    try {
+        udpSocket.close();
+    } catch(e) {}
+});
+
 udpSocket.on('message', (msg, rinfo) => {
     try {
         const data = JSON.parse(msg.toString());
@@ -323,21 +387,33 @@ udpSocket.on('message', (msg, rinfo) => {
 });
 
 udpSocket.on('listening', () => {
-    const address = udpSocket.address();
-    console.log(`UDP Discovery Server listening on ${address.address}:${address.port}`);
-    
-    // Periodically broadcast PING to discover peers
-    setInterval(() => {
-        const ping = Buffer.from(JSON.stringify({ type: 'PING' }));
-        udpSocket.setBroadcast(true);
-        // Broadcast on local subnet
-        udpSocket.send(ping, 0, ping.length, UDP_PORT, '255.255.255.255', (err) => {
-            if (err) console.error('UDP Broadcast error:', err);
-        });
-    }, 5000);
+    try {
+        const address = udpSocket.address();
+        console.log(`UDP Discovery Server listening on ${address.address}:${address.port}`);
+        
+        // Periodically broadcast PING to discover peers
+        setInterval(() => {
+            try {
+                const ping = Buffer.from(JSON.stringify({ type: 'PING' }));
+                udpSocket.setBroadcast(true);
+                // Broadcast on local subnet
+                udpSocket.send(ping, 0, ping.length, UDP_PORT, '255.255.255.255', (err) => {
+                    if (err) console.error('UDP Broadcast error:', err);
+                });
+            } catch (ex) {
+                console.error('UDP Broadcast send exception:', ex.message);
+            }
+        }, 5000);
+    } catch (e) {
+        console.error('UDP listening hook error:', e.message);
+    }
 });
 
-udpSocket.bind(UDP_PORT);
+try {
+    udpSocket.bind(UDP_PORT);
+} catch (err) {
+    console.error('Failed to bind UDP socket (UDP Discovery disabled):', err.message);
+}
 
 app.listen(PORT, () => {
     console.log(`Web Dashboard Backend listening at http://localhost:${PORT}`);
